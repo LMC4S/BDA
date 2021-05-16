@@ -1,0 +1,197 @@
+---
+title: "HW 10"
+output: pdf_document
+---
+# Problem 1
+
+## (1) & (2) 
+
+We will skip the single run in (1) and do 100 repeat runs directly.
+```{r message=FALSE, warning=FALSE}
+library(rstan)
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+Code_lr <- "
+data {
+  int<lower=0> N;
+  vector[N] x1;
+  vector[N] x2;
+  vector[N] y;
+}
+parameters {
+  real beta0;
+  real beta1;
+  real beta2;
+  real<lower=0> sigma;
+}
+model {
+  y ~ normal(beta0 + beta1*x1 + beta2*x2, sigma);
+}
+
+"
+lr <- stan_model(model_code = Code_lr) # compile the model
+
+beta <- c(3, .1, .5)
+coverage <- matrix(NA, nrow=100, ncol=3)
+
+for (i in 1:100) { 
+  x1 <- seq(1, 100, 1)
+  x2 <- rbinom(100, 1, .5)
+  err <- rt(100, df=4) * 5
+  
+  y <- 3 + .1*x1 + .5*x2 + err
+
+  lr_dat <- list(N=100, x1=x1, x2=x2, y=y)
+
+  chain <- sampling(object = lr, data = lr_dat, seed = 0) 
+  stats <- summary(chain)$summary
+  coverage[i, ] <- (stats[1:3, 5] < beta) & (stats[1:3, 7] > beta)
+}
+
+colMeans(coverage, na.rm = T)
+```
+
+## (3) 
+```{r message=FALSE, warning=FALSE}
+Code_lr_t <- "
+data {
+  int<lower=0> N;
+  vector[N] x1;
+  vector[N] x2;
+  vector[N] y;
+}
+parameters {
+  real beta0;
+  real beta1;
+  real beta2;
+  real<lower=0> nu;
+  real<lower=0> sigma;
+}
+model {
+  target += exponential_lpdf(nu| .1);
+  target += student_t_lpdf(y| nu+1, beta0 + beta1*x1 + beta2*x2, sigma);
+}
+
+"
+lr_t <- stan_model(model_code = Code_lr_t) # compile the model
+
+beta <- c(3, .1, .5)
+coverage_t <- matrix(NA, nrow=100, ncol=3)
+
+for (i in 1:100) { 
+  x1 <- seq(1, 100, 1)
+  x2 <- rbinom(100, 1, .5)
+  err <- rt(100, df=4) * 5
+  
+  y <- 3 + .1*x1 + .5*x2 + err
+  
+  lr_dat <- list(N=100, x1=x1, x2=x2, y=y)
+  
+  chain <- sampling(object = lr_t, data = lr_dat, seed = 0) 
+  stats <- summary(chain)$summary
+  coverage_t[i, ] <- (stats[1:3, 5] < beta) & (stats[1:3, 7] > beta)
+  if (i/10 == round(i/10))  print(i)
+}
+
+colMeans(coverage_t, na.rm = T)
+
+```
+
+# Problem 2
+
+Denote the number of shock avoidances made by dog $j$ before trial $i$ as $W_{ij}$ and whether the dog $j$ received the shock in trail $j$ as $S_{ij} \in \{0,1\}$ where $0$ means no shock. Let $T_{ij}$ be a latent variable indicating the waiting time for dog $j$ in trial $i$ to jump when presented the CS. 
+
+The model is $S_{ij} = I(T_{ij} \leq 10)$ and $T_{ij} \sim \text{Exp}(\lambda_{ij})$ and $\log\lambda_{ij} = \alpha i + \beta W_{ij}.$ The prior distribution for $\alpha$ and  $\beta$ are both uniform distribution on $(0, 100)$. Please note this is a weakly informative prior because we are enforcing that the training effect is positive and also the effect is not dramatically strong.
+
+The posterior is a sequence of conditional probability:
+\begin{align*}
+p(\alpha, \beta, T | S) &\propto p(\alpha, \beta) p(T_1, S_1|\alpha, \beta) \prod_{i=2}^{25} p(T_i, S_i|\alpha, \beta, S_1, \dots, S_{i-1}).
+\end{align*}
+```{r}
+Code <- "
+data {
+  int<lower=0> J;
+  int<lower=0> I;
+  matrix[J, I] S;
+  matrix[J, I] W;
+  matrix[J, I] IND;
+}
+
+parameters {
+  real<lower=0, upper=.05> intercept;
+  real<lower=0, upper=1> alpha;
+  real<lower=0, upper=1> beta;
+  matrix<lower=0>[J, I] T;
+
+}
+
+transformed parameters {
+  matrix[J, I] Lambda = intercept  + alpha * IND + beta * W; 
+}
+
+model {
+  for (i in 1:I) {
+    for (j in 1:J) {
+      T[j, i] ~ exponential(Lambda[j, i]);
+    }
+  }
+}
+
+"
+```
+
+```{r message=FALSE, warning=FALSE}
+dogs_model <- stan_model(model_code = Code) # compile the model
+
+dogs <- read.table('dogs.txt', header=F, fill=T)[-(1:2), -1] 
+dogs[dogs == 'S'] <- 1
+dogs[dogs == '.'] <- 0
+W <- t(apply(dogs, 1, cumsum))
+W <- cbind(0, W[, 1:24])
+IND <- t(apply(matrix(1, 30, 25), 1, cumsum))
+```
+
+```{r message=FALSE, warning=FALSE}
+dogs_dat <- list(J=30, I=25, S=dogs, W=W, IND=IND)
+chain <- sampling(object = dogs_model, data = dogs_dat, 
+                  seed = 1, iter=1000, chains=1)
+```
+```{r}
+stats1 <- summary(chain, pars=c('intercept', 'alpha', 'beta'))$summary
+stats1[, 9:10]
+```
+For the summary we can tell how well it converges using n_eff and Rhat. Although the n_eff and Rhat are not satisfying, we will use 10000 iterations at this time because the program is running too slow for larger sample size. 
+
+Following is the posterior inference on $(\alpha, \beta)$.
+```{r}
+stats1[, c(1:8)]
+```
+
+Posterior inference on $T_{1}$ (mean and median only).
+```{r}
+stats2 <- summary(chain, pars=c('T'))$summary
+stats2[1:25,  c(1, 6, 9, 10)]
+```
+
+# Problem 3
+
+Since the total number of $3 \times 3$ binary matrices with grand total equals 4 is $9 \choose 4 = 126$, the proposal is a uniform distribution on $\{1, \dots, 126\}$ and our target is uniform on $\{1, \dots, 5\}$ which represent the five possible arrangements of matrices.
+```{r}
+samp <- rep(0, 1e4)
+accept <- c()
+target <- seq(1, 5, 1)
+i <- 1
+while (i <= 1e4) {
+  ind <- sample(1:choose(9, 4), 1)
+  if (ind %in% target) {
+    samp[i] <- ind
+    accept <- c(accept, 1)
+    i <- i + 1
+  } else {
+    accept <- c(accept, 0)
+  }
+}
+mean(accept)
+```
+The acceptance rate is expected to be low because we are trying to sample $5$ out of $126$ uniformly. And the experiment shows that the acceptance rate is indeed low.
+

@@ -1,0 +1,55 @@
+---
+title: "R Notebook"
+output: 
+  pdf_document
+---
+Since $\text{E}_{\text{old}}\log p(\gamma|\phi^{\text{old}}, y)$ is a constant to $\phi$, we have
+\begin{align*}
+&\quad \text{argmax}_{\phi}\text{E}_{\text{old}}\log p(\gamma|\phi, y) \\
+&= \text{argmin}_{\phi}-\text{E}_{\text{old}}\log p(\gamma|\phi, y) \\
+&= \text{argmin}_{\phi}\left\{\text{E}_{\text{old}}(-\log p(\gamma|\phi, y) + \log p(\gamma|\phi^{\text{old}}, y)) \right\}\\
+&=\text{argmin}_{\phi}\text{E}_{\text{old}}\log \frac{p(\gamma|\phi^{\text{old}}, y)}{ p(\gamma|\phi, y)}.
+\end{align*}
+So it is equivalent to minimizing
+$$
+\text{E}_{\text{old}}\log \frac{p(\gamma|\phi^{\text{old}}, y)}{ p(\gamma|\phi, y)},
+$$
+the KL divergence between $p(\gamma|\phi^{\text{old}}, y)$ and $p(\gamma|\phi, y)$. Since $-\log(x)$ is convex, by Jensen's inequality we have
+\begin{align*}
+\text{E}_{\text{old}}\log \frac{p(\gamma|\phi^{\text{old}}, y)}{ p(\gamma|\phi, y)} &= \text{E}_{\text{old}}-\log \frac{ p(\gamma|\phi, y)}{p(\gamma|\phi^{\text{old}}, y)}\\
+&\geq -\log\text{E}_{\text{old}} \frac{ p(\gamma|\phi, y)}{p(\gamma|\phi^{\text{old}}, y)}\\
+&= -\log(1) = 0.
+\end{align*}
+The minimum $0$ is achieved when $\phi = \phi^{\text{old}}$, because if  $\phi = \phi^{\text{old}}$ then $$\text{E}_{\text{old}}\log \frac{p(\gamma|\phi^{\text{old}}, y)}{ p(\gamma|\phi, y)} = \text{E}_{\text{old}}\log (1) = 0.$$ This proves that the maximizer of $\text{E}_{\text{old}}\log p(\gamma|\phi, y)$ is $\phi^{\text{old}}.$
+
+# Problem 2
+The log posterior is 
+\begin{align*}
+\ell &= \log p(\theta, \mu, \log\sigma, \log\tau | y) \\
+&= -n \log\sigma - (J-1)\log\tau - \frac{1}{2\tau^2}\sum_{j=1}^{J}(\theta_j-\mu)^2 - \frac{1}{2\sigma^2}\sum_{j=1}^{J}\sum_{i=1}^{n_j}(y_{ij}-\theta_j)^2 + \text{constant.}
+\end{align*}
+Taking derivative of with respect to $\mu$ we have
+$$
+\frac{\partial \text{E}_{\text{old}}\ell}{\partial \mu} = \frac{1}{\tau^2}\sum_{j=1}^{J}\text{E}_{\text{old}}(\theta_j-\mu).
+$$
+Also, the second order derivative is negative (formula omitted). Setting the derivative to be $0$ we have 
+$\mu^{\text{new}} = \frac{1}{J}\sum_{j=1}^{J}\hat{\theta}_j$.
+
+Similarly, 
+
+$$
+\frac{\partial \text{E}_{\text{old}}\ell}{\partial \sigma} = -\frac{n}{\sigma} + \frac{1}{\sigma^3} \sum_{j=1}^{J}\sum_{i=1}^{n_j}\text{E}_{\text{old}}(y_{ij}-\theta_j)^2,
+$$
+and
+$$
+\frac{\partial \text{E}_{\text{old}}\ell}{\partial \sigma}\Big\rvert_{\mu = \mu^{\text{new}}} = -\frac{J-1}{\tau} + \frac{1}{\tau^3} \sum_{j=1}^{J}\text{E}_{\text{old}}(\theta_j-\mu^{\text{new}})^2.
+$$
+
+Setting the derivatives to be $0$ we have 
+$$
+\sigma^{\text{new}} = \left(\frac{1}{n}\sum_{j=1}^{J}\sum_{i=1}^{n_j}\text{E}_{\text{old}}(y_{ij}-\theta_j)^2 \right)^{1/2} = \left(\frac{1}{n}\sum_{j=1}^{J}\sum_{i=1}^{n_j}\left((y_{ij}-\hat{\theta}_j)^2 + V_{\theta_j}\right) \right)^{1/2},
+$$
+and 
+$$
+\tau^{\text{new}} =\left(\frac{1}{J-1}\sum_{j=1}^{J}\text{E}_{\text{old}}(\theta_j-\mu^{\text{new}})^2 \right)^{1/2} = \left(\frac{1}{J-1}\sum_{j=1}^{J}\left((\hat{\theta}_j - \mu^{\text{new}})^2 + V_{\theta_j}\right) \right)^{1/2}.
+$$

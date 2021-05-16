@@ -1,0 +1,123 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={R Notebook},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+
+\title{R Notebook}
+\author{}
+\date{\vspace{-2.5em}}
+
+\begin{document}
+\maketitle
+
+Since \(\text{E}_{\text{old}}\log p(\gamma|\phi^{\text{old}}, y)\) is a
+constant to \(\phi\), we have \begin{align*}
+&\quad \text{argmax}_{\phi}\text{E}_{\text{old}}\log p(\gamma|\phi, y) \\
+&= \text{argmin}_{\phi}-\text{E}_{\text{old}}\log p(\gamma|\phi, y) \\
+&= \text{argmin}_{\phi}\left\{\text{E}_{\text{old}}(-\log p(\gamma|\phi, y) + \log p(\gamma|\phi^{\text{old}}, y)) \right\}\\
+&=\text{argmin}_{\phi}\text{E}_{\text{old}}\log \frac{p(\gamma|\phi^{\text{old}}, y)}{ p(\gamma|\phi, y)}.
+\end{align*} So it is equivalent to minimizing \[
+\text{E}_{\text{old}}\log \frac{p(\gamma|\phi^{\text{old}}, y)}{ p(\gamma|\phi, y)},
+\] the KL divergence between \(p(\gamma|\phi^{\text{old}}, y)\) and
+\(p(\gamma|\phi, y)\). Since \(-\log(x)\) is convex, by Jensen's
+inequality we have \begin{align*}
+\text{E}_{\text{old}}\log \frac{p(\gamma|\phi^{\text{old}}, y)}{ p(\gamma|\phi, y)} &= \text{E}_{\text{old}}-\log \frac{ p(\gamma|\phi, y)}{p(\gamma|\phi^{\text{old}}, y)}\\
+&\geq -\log\text{E}_{\text{old}} \frac{ p(\gamma|\phi, y)}{p(\gamma|\phi^{\text{old}}, y)}\\
+&= -\log(1) = 0.
+\end{align*} The minimum \(0\) is achieved when
+\(\phi = \phi^{\text{old}}\), because if \(\phi = \phi^{\text{old}}\)
+then
+\[\text{E}_{\text{old}}\log \frac{p(\gamma|\phi^{\text{old}}, y)}{ p(\gamma|\phi, y)} = \text{E}_{\text{old}}\log (1) = 0.\]
+This proves that the maximizer of
+\(\text{E}_{\text{old}}\log p(\gamma|\phi, y)\) is
+\(\phi^{\text{old}}.\)
+
+\hypertarget{problem-2}{%
+\section{Problem 2}\label{problem-2}}
+
+The log posterior is \begin{align*}
+\ell &= \log p(\theta, \mu, \log\sigma, \log\tau | y) \\
+&= -n \log\sigma - (J-1)\log\tau - \frac{1}{2\tau^2}\sum_{j=1}^{J}(\theta_j-\mu)^2 - \frac{1}{2\sigma^2}\sum_{j=1}^{J}\sum_{i=1}^{n_j}(y_{ij}-\theta_j)^2 + \text{constant.}
+\end{align*} Taking derivative of with respect to \(\mu\) we have \[
+\frac{\partial \text{E}_{\text{old}}\ell}{\partial \mu} = \frac{1}{\tau^2}\sum_{j=1}^{J}\text{E}_{\text{old}}(\theta_j-\mu).
+\] Also, the second order derivative is negative (formula omitted).
+Setting the derivative to be \(0\) we have
+\(\mu^{\text{new}} = \frac{1}{J}\sum_{j=1}^{J}\hat{\theta}_j\).
+
+Similarly,
+
+\$\$ \frac{\partial \text{E}_{\text{old}}\ell}{\partial \sigma} =
+-\frac{n}{\sigma} + \frac{1}{\sigma^3}
+\sum\emph{\{j=1\}\^{}\{J\}\sum}\{i=1\}\^{}\{n\_j\}\text{E}\emph{\{\text{old}\}(y}\{ij\}-\theta\_j)\^{}2,
+
+\[
+and
+\]
+\frac{\partial \text{E}_{\text{old}}\ell}{\partial \sigma}\Big\rvert\emph{\{\mu =
+\mu\^{}\{\text{new}\}\} = -\frac{J-1}{\tau} + \frac{1}{\tau^3}
+\sum}\{j=1\}\^{}\{J\}\text{E}\_\{\text{old}\}(\theta\_j-\mu\textsuperscript{\{\text{new}\})}2.
+\$\$
+
+Setting the derivatives to be \(0\) we have \[
+\sigma^{\text{new}} = \left(\frac{1}{n}\sum_{j=1}^{J}\sum_{i=1}^{n_j}\text{E}_{\text{old}}(y_{ij}-\theta_j)^2 \right)^{1/2} = \left(\frac{1}{n}\sum_{j=1}^{J}\sum_{i=1}^{n_j}\left((y_{ij}-\hat{\theta}_j)^2 + V_{\theta_j}\right) \right)^{1/2},
+\] and \[
+\tau^{\text{new}} =\left(\frac{1}{J-1}\sum_{j=1}^{J}\text{E}_{\text{old}}(\theta_j-\mu^{\text{new}})^2 \right)^{1/2} = \left(\frac{1}{J-1}\sum_{j=1}^{J}\left((\hat{\theta}_j - \mu^{\text{new}})^2 + V_{\theta_j}\right) \right)^{1/2}.
+\]
+
+\end{document}

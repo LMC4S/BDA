@@ -1,0 +1,64 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# Problem 2
+
+## (1)
+
+## (1)
+The posterior is 
+\begin{align*}
+p(\theta|y) &\propto p(\theta) p(y|\theta)\\
+&\propto \prod_{i=1}^{2} \frac{1}{\pi\left\{1+(y_i-\theta)^2 \right\}}
+\end{align*}
+So the integral is 
+\begin{align*}
+&\quad \int_{-\infty}^{\infty} p(\theta|y) \;d\theta\\
+&\propto \int_{-\infty}^{\infty}\prod_{i=1}^{2} \frac{1}{\pi\left\{1+(y_i-\theta)^2 \right\}} \;d\theta\\
+&= \int_{-\infty}^{\infty}\prod_{i=1}^{2} \frac{1}{\pi\left\{1+(y_i-\theta)^2 \right\}} \;d\theta
+\end{align*}
+The last line is because we form a density of Cauchy distribution in the integral.
+
+The sampling distribution is 
+$$
+p(y|\theta, \sigma^2) = \prod_{j=1}^{J}\prod_{i=1}^{n_j}\frac{1}{\sqrt{2\pi}\sigma}\exp\left(-\frac{(y_{ij}-\theta_j)^2}{2\sigma^2}\right). 
+$$
+The joint prior is 
+$$
+p(\theta|\mu, \tau^2) = \prod_{j=1}^J \frac{1}{\sqrt{2\pi}\tau^2}\exp\left(-\frac{(\theta_j-\mu)^2}{2\tau^2}\right).
+$$
+The joint hyperprior is 
+$$
+p(\mu, \log\sigma, \log\tau) \propto \tau,
+$$
+for $\sigma >0$ and $\tau >0$.
+
+## (2)
+The unormalized joint posterior is 
+$$
+p(\theta, \mu, \log\sigma, \log\tau|y) \propto \tau \prod_{j=1}^{J}N(\theta_j|\mu, \tau^2)\prod_{j=1}^{J}\prod_{i=1}^{n_j}N(y_{ij}|\theta_j, \sigma^2).
+$$
+
+## (3)
+In $t$-th iteration,
+
+* Sample $\theta^{(t)} \in \mathbb{R}^J$ from $p(\theta, \mu^{(t-1)}, \log\sigma^{(t-1)}, \log\tau^{(t-1)}|y)$, which is $N(\hat{\theta}, V_{\theta})$. 
+
+\textcolor{red}{For convenience let's temporarily denote} \textcolor{blue}{ $\mu^{(t-1)},\log\sigma^{(t-1)}, \log\tau^{(t-1)}$} \textcolor{red}{as just} \textcolor{blue}{$\mu,\log\sigma, \log\tau$} \textcolor{red}{in the formula of conditional posteriors, and do the similar for the other conditional sampling steps.} 
+
+Then $\hat{\theta} \in \mathbb{R}^{J}$ is a vector and on $j$th coordinate we have 
+$$
+\hat{\theta}_j = \frac{\frac{1}{\tau^2}\mu + \frac{n_j}{\sigma^2}\bar{y}_{\cdot j}}{\frac{1}{\tau^2}+\frac{n_j}{\sigma^2}}.
+$$
+The covariance matrix $V_{\theta}$ is a diagonal matrix with $1/(\frac{1}{\tau^2}+\frac{n_j}{\sigma^2})$ being $j$th diagonal element.
+
+* Sample $\mu^{(t)}$ from $p(\mu|\theta^{(t)}, \sigma^{(t-1)}, \tau^{(t-1)}, y) \sim N(\hat{\mu}, \tau^2/J)$ where $\hat{\mu} = (1/J)\sum_{j=1}^{J}\theta_j$.
+
+* Sample $(\sigma^{2})^{(t)}$ from $p(\sigma^2|\theta^{(t)}, \mu^{(t)}, \tau^{(t-1)}, y) \sim \text{Inv-}\chi^2(n, \hat{\sigma}^2)$ where $\hat{\sigma}^2 = n^{-1}\sum_{j=1}^{J}\sum_{i=1}^{n_j}(y_{ij}-\theta_j)^2$.
+
+* Sample $(\tau^{2})^{(t)}$ from $p(\tau^2|\theta^{(t)}, \sigma^{(t)}, \mu^{(t)}, y) \sim \text{Inv-}\chi^2(J-1, \hat{\tau}^2)$ where $\hat{\tau}^2 = (J-1)^{-1}\sum_{j=1}^{J}(\theta_{j}-\mu)^2$.
+

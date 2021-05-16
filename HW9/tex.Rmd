@@ -1,0 +1,26 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Given a sample $(y, n, x)$ of size $k$, using a uniform prior, the log posterior density of $(\alpha, \beta)$ is
+\begin{align*}
+\log p(\alpha, \beta | y, n, x) &\propto \sum_{i=1}^{k}\left\{
+    y_i \log\left(\text{logit}^{-1}(\alpha+\beta x_i)\right) + (n_i - y_i)          
+    \log\left(1-\text{logit}^{-1}(\alpha+\beta x_i)\right)
+\right\}\\
+&= \sum_{i=1}^{k}\left\{
+    -y_i \log(1+e^{-\alpha-\beta x_i}) - (n_i - y_i) \log(1+e^{\alpha+\beta x_i}).
+\right\}
+\end{align*}
+
+Denote $(\alpha, \beta)$ by $\theta$, the gradient is 
+\begin{align*}
+\frac{d \log p}{d \theta} &= \left(\frac{d \log p}{d \alpha}, \frac{d \log p}{d \beta} \right)\\
+&= \left(\sum_{i=1}^{k}\left\{
+    \frac{y_i}{1+ e^{\alpha+\beta x_i}} - \frac{(n_i - y_i)}{1+e^{-\alpha-\beta x_i}}
+\right\}, \sum_{i=1}^{k}\left\{
+    \frac{x_i y_i}{1+ e^{\alpha+\beta x_i}} - \frac{x_i (n_i - y_i)}{1+e^{-\alpha-\beta x_i}}
+\right\} \right).
+\end{align*}
+

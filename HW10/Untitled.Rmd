@@ -1,0 +1,41 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Denote the number of shock avoidances made by dog $j$ before trial $i$ as $W_{ij}$ and whether the dog $j$ received the shock in trail $j$ as $S_{ij} \in \{0,1\}$ where $0$ means no shock. Let $T_{ij}$ be a latent variable indicating the waiting time for dog $j$ in trial $i$ to jump when presented the CS. 
+
+The model is $S_{ij} = I(T_{ij} \leq 10)$ where $T_{ij} \sim \text{Exp}(\lambda_{ij})$ and $\log\lambda_{ij} = \alpha i + \beta W_{ij}.$ The prior distribution for $\alpha$ and  $\beta$ are both uniform distribution on $(0, 100)$. Please note this is a weakly informative prior because we are enforcing that the training effect is positive and also the effect is not dramatically strong.
+
+The posterior is 
+\begin{align*}
+p(\alpha, \beta, T | S) &\propto p(\alpha, \beta) p(T|\alpha, \beta) p(S | T) \\
+&\propto (\alpha i + \beta W_{ij})\exp\left\{-(\alpha i + \beta W_{ij})T_{ij}\right\}I\left\{T_{ij}S_{ij} \in \{0\}\cup(10, +\infty)\right\}. 
+\end{align*}
+
+```{r}
+library(rstan)
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+
+dogs_model <- stan_model(file = 'Dogs.stan') # compile the model
+dogs <- read.table('dogs.txt', header=F, fill=T)[-(1:2), -1] 
+dogs[dogs == 'S'] <- 1
+dogs[dogs == '.'] <- 0
+
+W <- t(apply(dogs, 1, cumsum))
+IND <- t(apply(matrix(1, 30, 25), 1, cumsum))
+```
+
+```{r}
+dogs_dat <- list(J=30, I=25, S=dogs, W=W, IND=IND)
+chain <- sampling(object = dogs_model, data = dogs_dat, seed = 0) 
+  stats <- summary(chain)$summary
+  coverage[i, ] <- (stats[1:3, 5] < beta) & (stats[1:3, 7] > beta)
+  if (i/10 == round(i/10))  print(i)
+}
+
+colMeans(coverage, na.rm = T)
+
+```
+
