@@ -1,6 +1,5 @@
 ---
 title: "Final Exam"
-author: "Ziyue Wang"
 output: pdf_document
 ---
 
